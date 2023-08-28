@@ -1,0 +1,274 @@
+@page "/upsdisplay/{UpsName}/{UpsID}"
+@page "/upsdisplay/{UpsName}"
+
+@using System.Net.Http
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using System.Threading.Tasks
+@inject HttpClient HttpClient
+@inject NavigationManager Nav
+@inject ApiService ApiService
+@using Newtonsoft.Json.Linq
+@inject NavigationManager Nav
+@using Newtonsoft.Json
+
+<MudBreadcrumbs Items="_items" Separator=">"></MudBreadcrumbs>  <!-- Home->UPSs->UpsName -->
+
+<MudText Typo="Typo.h3" GutterBottom="true">@UpsName
+    <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="refresh" OnClick="GetBateries"></MudIconButton>
+</MudText>
+
+<MudCheckBox @bind-Checked="@DisplayStatus">Batery Status</MudCheckBox>
+
+
+@if (data != null)
+{
+    <MudContainer>
+        <MudGrid Justify="Justify.FlexStart" Spacing="1"  style="margin-top: 40px;"> 
+            @* justify: changes where grid element/item stay (center, start, end,...)
+                spacing: alters item size*@
+            @foreach (var bat in data)
+            {
+                <MudItem Class="custom-outline" style="margin-right: 20px; margin-bottom: 20px;" @onclick="() => ToggleCollapse(bat)">   <!-- margin: space between cards -->
+                    <MudCardContent>
+                        <div style=" position: relative;">
+                            <MudAvatar class = "@($"{GetPriorityColorClass(bat.SoH)}")" style="position: absolute; top: 0; right: 0; margin-left: 3px;" Size="Size.Small">
+                                @if (DisplayStatus)
+                                {
+                                    <MudTooltip Text="@bat.Status" Placement="Placement.Top">
+                                        <MudIcon Icon="@GetStatusIcon(bat.Status)" Size="Size.Small" />
+                                    </MudTooltip>
+                                }
+                            </MudAvatar>
+                            <div style="margin-right: 40px;">   <!-- margin: space between text and circle -->
+                                <MudText Typo="Typo.h6"> @bat.Name </MudText>
+                                <div class="collapsible-content" style="display: @(bat.Collapsed ? "none" : "block");">
+                                @if(bat.Items != null && bat.Items.Length != 0){
+                                    @foreach (var item in bat.Items)
+                                    {   
+                                        <MudCard Class="@($"{GetPriorityColorClass(item.Priority)} smaller-card")" Style="border-radius: 20px;">
+                                            <MudCardContent>
+                                                <MudText> @item.Name: @item.LastValue</MudText>
+                                            </MudCardContent>
+                                        </MudCard>
+                                    }
+                                    <MudCard Class="unknown-card smaller-card" Style="border-radius: 20px;">
+                                        <MudCardContent>
+                                            <MudText> Ciclos Cargas/Descargas: ?</MudText>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                                </div>
+                            </div>
+                        </div>
+                    </MudCardContent>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudContainer>
+}
+
+
+@code {
+    private bool refresh = true;
+    private List<BreadcrumbItem> _items;
+
+    public bool DisplayStatus { get; set; } = false;
+
+    private Batery[]? data = default!;
+    private string apiResponse = "";
+
+    [Parameter]
+    public string UpsName { get; set; }
+
+    [Parameter]
+    public string UpsID { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        refresh = !refresh;
+        if(refresh) Nav.NavigateTo("");
+
+        try
+        {
+            _items = new List<BreadcrumbItem>{   
+            new BreadcrumbItem("Home", href: "/"),
+            new BreadcrumbItem("UPSs", href: "/upsdisplay"),
+            new BreadcrumbItem(UpsName, href: null, disabled: true)
+            };
+
+            if(UpsName.Equals("UPS CCO Lisboa")){
+                await GetBateries();
+                
+            }
+
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions
+        }
+
+    }
+
+    private async Task GetBateries(){
+        /*var json = await File.ReadAllTextAsync("wwwroot/sample-data/hostItemResponse.json");
+        data = Newtonsoft.Json.JsonConvert.DeserializeObject<Batery[]>(json);*/
+
+        try
+        {
+            string[] parameters = {"22"};
+            apiResponse = await ApiService.GetApiResponse("hostItem", parameters).ConfigureAwait(false);
+            JObject json = JObject.Parse(apiResponse);
+
+            // Deserialize 
+            data = json["result"].ToObject<Batery[]>();
+
+            List<string> hostIDs =  new List<string>();
+            foreach (var bat in data)
+            {
+                bat.Items = bat.Items.Where(item => item.HostID == bat.HostID && !item.Name.StartsWith("ICMP"))
+                .Select(item =>
+                {
+                    if (item.Name.StartsWith("Daily"))
+                    {
+                        // Round off the float value
+                        item.LastValue = Math.Round(float.Parse(item.LastValue), 2).ToString();
+                    }
+                    return item;
+                }).ToArray();
+
+                hostIDs.Add(bat.HostID);
+            }
+
+            await GetItems(hostIDs.ToArray());
+
+            await InvokeAsync(StateHasChanged);
+
+            SetSoH();
+            SetBateryStatus();
+
+            Array.Sort(data, (a, b) => b.SoH.CompareTo(a.SoH)); // order from sickest to healthiest
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
+    }
+
+    private async Task GetItems(string[] hostIDs){
+
+        apiResponse = await ApiService.GetApiResponse("itemTrigger", hostIDs).ConfigureAwait(false);
+        
+        JObject json = JObject.Parse(apiResponse);
+
+        // Deserialize 
+        var dataItems = json["result"].ToObject<Item[]>();
+
+        foreach(var bat in data){
+            // Group triggers by Item and hostId, filter by IsProblem = "1"(active), and select highest priority
+            foreach(var item in bat.Items)
+            {
+                item.Triggers = dataItems.Where(dataItem => dataItem.HostID == item.HostID && dataItem.Name == item.Name)
+                .Select(dataItem => dataItem.Triggers)
+                .SingleOrDefault();
+
+                if (item.Triggers != null){
+                    var highestTrigger = item.Triggers
+                        .Where(trigger => trigger.Value == "1")
+                        .OrderByDescending(trigger => int.Parse(trigger.Priority)) // Convert to int for sorting, Order from highest priority to lowest
+                        .FirstOrDefault(); // Get highest value
+
+                    if (highestTrigger != null){
+                        item.Priority = int.Parse(highestTrigger.Priority);
+                    }
+                }
+                
+            }         
+        }
+    }
+    
+    private void SetSoH()
+    {
+        foreach (Batery bat in data)
+        {
+            int SoH = 0;
+            foreach (Item item in bat.Items)
+            {
+                SoH += item.Priority;
+            }
+            bat.SoH = SoH/bat.Items.Length;
+        }
+    }
+
+    private string GetPriorityColorClass(int priority)
+    {
+        switch (priority)
+        {
+            case 0: return "excellent-card";
+            case 1: return "excellent-card";
+            case 2: return "low-warning-card";
+            case 3: return "warning-card";
+            case 4: return "low-urgency-card";
+            case 5: return "urgency-card";
+            default: return "unknown-card";
+        }
+    }
+
+
+    private void SetBateryStatus()
+    {
+        float voltage;
+        foreach (Batery bat in data)
+        {
+            voltage = float.Parse(bat.Items.FirstOrDefault(item => item.Name == "Voltage").LastValue) / 1000f;
+            if(13.5 <= voltage && voltage <= 13.62) bat.Status = "Charging";
+            //Handle values in between
+            else if(12.5 <= voltage && voltage <= 12.9) bat.Status = "Under Maintenance";
+            else if(10.5 <= voltage && voltage < 12.5) bat.Status = "Discharging";
+            else bat.Status = "Unknown";
+        }
+    }
+
+    private string GetStatusIcon(string status){
+        switch (status)
+        {
+            case "Under Maintenance": return Icons.Material.Filled.Settings;
+            case "Charging": return Icons.Material.Filled.BatteryChargingFull;
+            case "Discharging": return Icons.Material.Filled.BatteryAlert;
+            default: return Icons.Material.Filled.BatteryUnknown;
+        }
+    }
+
+    private void ToggleCollapse(Batery bat)
+    {
+        bat.Collapsed = !bat.Collapsed;
+    }
+
+    public class Batery
+    {
+        public string? HostID { get; set; }
+        public string? Name { get; set; }
+        public Item[]? Items { get; set; }
+        public bool Collapsed { get; set; } = true;
+        public int SoH {get; set;} = 0;
+        public string Status { get; set; }
+    }
+
+    public class Item
+    {   
+        public string HostID { get; set; }
+        public string Name { get; set; }
+        public string LastValue { get; set; }
+        public int Priority {get; set;} = 0;
+        public Trigger[]? Triggers { get; set; }
+    }
+
+    public class Trigger
+    {
+        public string ItemID { get; set; }
+        public string Description { get; set;}
+        public string Priority { get; set;}
+        public string Value { get; set;}        // 1 if its an active problem, 0 if not
+    }
+
+}

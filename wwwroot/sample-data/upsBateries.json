@@ -1,0 +1,90 @@
+[
+    {
+        "hostid": "10576",
+        "name": "bat1_thales",
+        "items": [
+            {
+                "name": "Coeficiente",
+                "lastvalue": "76"
+            },
+            {
+                "name": "Resistencia Interna",
+                "lastvalue": "59.07"
+            },
+            {
+                "name": "Temperature",
+                "lastvalue": "6"
+            },
+            {
+                "name": "Voltage",
+                "lastvalue": "12481"
+            }
+        ]
+    },
+    {
+        "hostid": "10577",
+        "name": "bat2_thales",
+        "items": [
+            {
+                "name": "Coeficiente",
+                "lastvalue": "94"
+            },
+            {
+                "name": "Resistencia Interna",
+                "lastvalue": "201.78"
+            },
+            {
+                "name": "Temperature",
+                "lastvalue": "24"
+            },
+            {
+                "name": "Voltage",
+                "lastvalue": "12589"
+            }
+        ]
+    },
+    {
+        "hostid": "10578",
+        "name": "bat3_thales",
+        "items": [
+            {
+                "name": "Coeficiente",
+                "lastvalue": "59"
+            },
+            {
+                "name": "Resistencia Interna",
+                "lastvalue": "60.05"
+            },
+            {
+                "name": "Temperature",
+                "lastvalue": "24"
+            },
+            {
+                "name": "Voltage",
+                "lastvalue": "12527"
+            }
+        ]
+    },
+    {
+        "hostid": "10579",
+        "name": "bat4_thales",
+        "items": [
+            {
+                "name": "Coeficiente",
+                "lastvalue": "69"
+            },
+            {
+                "name": "Resistencia Interna",
+                "lastvalue": "59.44"
+            },
+            {
+                "name": "Temperature",
+                "lastvalue": "25"
+            },
+            {
+                "name": "Voltage",
+                "lastvalue": "12658"
+            }
+        ]
+    }
+]

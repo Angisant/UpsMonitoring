@@ -1,0 +1,26 @@
+[
+    {
+        "groupid": "22",
+        "name": "UPS CCO Lisboa"
+    },
+    {
+        "groupid": "2",
+        "name": "UPS CCO Setubal"
+    },
+    {
+        "groupid": "3",
+        "name": "UPS CCO Porto"
+    },
+    {
+        "groupid": "4",
+        "name": "UPS CCO Braga"
+    },
+    {
+        "groupid": "5",
+        "name": "UPS CCO Algarve"
+    },
+    {
+        "groupid": "6",
+        "name": "UPS CCO Castelo Branco"
+    }
+]

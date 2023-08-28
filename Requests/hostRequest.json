@@ -1,0 +1,15 @@
+{
+    "jsonrpc": "2.0",
+    "method": "host.get",
+    "params": {
+        "output": [
+            "name"
+        ],
+        "search": {
+            "name": "bat"
+        },
+        "startSearch": true,
+        "groupids" :""
+    },
+    "id": 4
+}

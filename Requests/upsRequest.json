@@ -1,0 +1,18 @@
+{
+    "jsonrpc": "2.0",
+    "method": "hostgroup.get",
+    "params": {
+        "output": [
+            "name",
+            "groupid"
+        ],
+        "with_hosts": true,
+        "search": {
+            "name": [
+                "UPS"
+            ]
+        },
+        "startSearch": true
+    },
+    "id": 2
+}

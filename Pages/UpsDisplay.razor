@@ -1,0 +1,82 @@
+@page "/upsdisplay"
+
+@using System.Net.Http
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using System.Threading.Tasks
+@inject HttpClient HttpClient
+@inject NavigationManager Nav
+@using Microsoft.Extensions.Http
+@inject IHttpClientFactory httpClientFactory
+@inject ApiService ApiService
+@using Newtonsoft.Json.Linq
+
+<MudText Typo="Typo.h6"> UPSs </MudText>
+
+
+<MudBreadcrumbs Items="_items" Separator=">"></MudBreadcrumbs>  <!-- Home->UPSs -->
+
+@if (data != null)
+{
+    <MudContainer>
+        <MudGrid Justify="Justify.FlexStart" Spacing="1">      @* justify: changes where grid element/item stay (center, start, end,...) 
+                                                                  spacing: alters item size*@
+            @foreach (var ups in data)
+            {
+                <MudItem Class="custom-outline" style="margin-right: 20px; margin-bottom: 20px;">    <!-- margin: space between cards -->
+                    <MudCardContent>
+                        <div>
+                            <button @onclick="@(() => Nav.NavigateTo($"upsdisplay/{ups.Name}/{ups.GroupID}"))">
+                                <div>
+                                    <MudText Typo="Typo.h6"> @ups.Name </MudText>
+                                    <MudText> GroupID: @ups.GroupID </MudText>
+                                </div>
+                            </button>
+
+                        </div>
+                    </MudCardContent>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudContainer>
+}
+
+
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>{   
+        new BreadcrumbItem("Home", href: "/"),
+        new BreadcrumbItem("UPSs", href: null, disabled: true)
+    };
+
+    private UPS[]? data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        try
+        {
+            /*var json = await File.ReadAllTextAsync("wwwroot/sample-data/ups.json");
+            data = Newtonsoft.Json.JsonConvert.DeserializeObject<UPS[]>(json);*/
+
+            string[] parameters = null;
+            var apiResponse = await ApiService.GetApiResponse("ups", parameters).ConfigureAwait(false);
+            JObject json = JObject.Parse(apiResponse);
+
+            // Deserialize 
+            data = json["result"].ToObject<UPS[]>();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
+    }
+
+
+    public class UPS
+    {
+        public string? GroupID { get; set; }
+        public string? Name { get; set; }
+
+    }
+}

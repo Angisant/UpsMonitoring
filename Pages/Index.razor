@@ -1,0 +1,99 @@
+﻿@page "/"
+
+@inject NavigationManager Nav
+
+@using UPS_Monitor.Services
+@inject ApiService ApiService
+@inject AuthService AuthService
+
+@using System.Net.Http
+@using System.Text.Json
+@using System.Threading.Tasks
+@inject HttpClient HttpClient
+@using Microsoft.Extensions.Http
+@inject IHttpClientFactory HttpClientFactory
+@using Newtonsoft.Json.Linq
+
+<PageTitle>Index</PageTitle>
+
+@if (rendered && !AuthService.IsUserLoggedIn())
+{
+    <MudCard Class= "login-card">
+        <MudCardContent>
+            <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Size="Size.Large" style="margin-bottom: 20px; font-size: 17rem;" />
+            <MudTextField @bind-Value="Username" Label="Username" Variant="Variant.Outlined"></MudTextField>
+            <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
+            <MudButton  @onclick="Login" FullWidth="true" DisableElevation="true" Variant="Variant.Filled" style= "@($"margin-top: 10px; color: white; background: {Colors.Grey.Darken3};")">Login</MudButton>
+            
+            @if(AuthService.DidLoginFail())
+            {
+                <div style="color: red;">
+                    @AuthService.GetErrorMessage()
+                </div>
+            }
+        </MudCardContent>
+    </MudCard>
+
+}
+else
+{
+    ClearCredentials();
+}
+
+
+@code {
+    private string Username { get; set; }
+    private string Password { get; set; }
+    private bool isPasswordShowing;
+    private InputType PasswordInput = InputType.Password;
+    private string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+    private bool rendered = false;
+
+    protected override void OnInitialized()
+    {
+        AuthService.AuthenticationStateChanged += async () => await InvokeAsync(StateHasChanged);
+
+        base.OnInitialized();
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await AuthService.Init();
+            rendered = true;
+            StateHasChanged();
+        }
+    }
+
+    private void ButtonTestclick()
+    {
+        @if (isPasswordShowing)
+        {
+            isPasswordShowing = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else {
+            isPasswordShowing = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+    private async Task Login()
+    {   
+        await AuthService.Login(Username, Password);
+        await InvokeAsync(StateHasChanged);
+        
+        if(!AuthService.DidLoginFail())
+        {
+            Nav.NavigateTo("upsdisplay");
+        }
+    }
+
+    private void ClearCredentials(){
+        Username = "";
+        Password = "";
+    }
+}
