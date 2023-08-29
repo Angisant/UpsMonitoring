@@ -11,6 +11,12 @@
     margin-top: 40px;
 }
 
+.display-tool-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .display-avatar {
     position: absolute;
     top: 0;
