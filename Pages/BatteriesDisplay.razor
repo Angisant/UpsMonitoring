@@ -18,8 +18,29 @@
     <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="refresh" OnClick="GetBateries"></MudIconButton>
 </MudText>
 
-<MudCheckBox @bind-Checked="@DisplayStatus">Battery Status</MudCheckBox>
+<MudPaper Elevation="25">
+    <MudToolBar style="display: flex; align-items: center; justify-content: center;">
+        <MudCheckBox @bind-Checked="@DisplayStatus">Battery Status</MudCheckBox>
 
+        <div style="margin-left: auto;">
+            <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+            
+                @* How to order the batteries by (descending order default) *@
+                <MudToggleIconButton Title="@OrderBy" ToggledChanged="ChangeBatteryOrder" Icon="@Icons.Material.Filled.ArrowDownward"
+                            ToggledIcon="@Icons.Material.Filled.ArrowUpward" />
+
+                <MudButton OnClick="() => OrderBatteries()">@OrderBy</MudButton>
+
+                @* What to order the batteries by (SoH default) *@
+                <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown">
+                    <MudMenuItem OnClick="() => ChangeBatteryOrderBy(0)">SoH</MudMenuItem>
+                    <MudMenuItem OnClick="() => ChangeBatteryOrderBy(1)">Name</MudMenuItem>
+                </MudMenu>
+
+            </MudButtonGroup>
+        </div>
+    </MudToolBar>
+</MudPaper>
 
 @if (data != null)
 {
@@ -70,8 +91,6 @@
 
 
 @code {
-    private bool refresh = true;
-
     private List<BreadcrumbItem> _items;
 
     public bool DisplayStatus { get; set; } = false;
@@ -79,6 +98,10 @@
     private Battery[]? data = default!;
 
     private string apiResponse = "";
+
+    private bool DescendingOrder = true;  // default battery order
+    
+    private string OrderBy = "SoH";
 
     [Parameter]
     public string UpsName { get; set; }
@@ -107,10 +130,8 @@
     }
 
     // Sends battery request, filters out obsolete items, sets item triggers, state of health and status for each battery
-    private async Task GetBateries(){
-        /*var json = await File.ReadAllTextAsync("wwwroot/sample-data/hostItemResponse.json");
-        data = Newtonsoft.Json.JsonConvert.DeserializeObject<Battery[]>(json);*/
-
+    private async Task GetBateries()
+    {
         try
         {
             /**** Send host item GET request to Zabbix API ****
@@ -149,7 +170,7 @@
             SetSoH();   // Linear calculation of state of health
             SetBatteryStatus();  // Under Maintenance, Charging, Discharging or Unknown
 
-            Array.Sort(data, (a, b) => b.SoH.CompareTo(a.SoH)); // Order from sickest to healthiest
+            OrderBatteries();
         }
         catch (Exception ex)
         {
@@ -158,8 +179,8 @@
     }
 
     // Sends trigger request for batteries, sets triggers and sets priority for each battery item
-    private async Task GetTriggers(string[] hostIDs){
-
+    private async Task GetTriggers(string[] hostIDs)
+    {
         /**** Send item trigger GET request to Zabbix API ****
          * Send: Battery ids
          * Get: Item list
@@ -197,9 +218,9 @@
     }
     
 
-    /***** Calculates and sets state of health of each battery using its item's priorities ******
+    /***** Calculates and sets state of health of each battery using its item's priorities ****
      !  All items weight the same in this method
-     *******************************************************************************************/
+     ******************************************************************************************/
     private void SetSoH()
     {
         foreach (Battery bat in data)
@@ -258,6 +279,29 @@
     private void ToggleCollapse(Battery bat)
     {
         bat.Collapsed = !bat.Collapsed;
+    }
+
+    private void OrderBatteries()
+    {
+        if(OrderBy == "SoH") 
+        {
+            // Order by priority/sickness
+            Array.Sort(data, (a, b) => DescendingOrder ? b.SoH.CompareTo(a.SoH) : a.SoH.CompareTo(b.SoH)); // sickest to heathiest : healthiest to sickest
+        }
+        else
+        {
+            // Order by name
+            Array.Sort(data, (a, b) => DescendingOrder ? b.Name.CompareTo(a.Name) : a.Name.CompareTo(b.Name)); // desc : asc
+        }
+    }
+
+    private void ChangeBatteryOrderBy(int order)
+    {
+        OrderBy = order == 0 ? "SoH" : "name";
+    }
+
+    private void ChangeBatteryOrder() {
+        DescendingOrder = DescendingOrder ? false : true;
     }
 
     public class Battery

@@ -16,6 +16,9 @@
 
 <MudBreadcrumbs Items="_items" Separator=">"></MudBreadcrumbs>  <!-- Home->UPSs -->
 
+@* Refresh ups display *@
+<MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="refresh" OnClick="GetUPS"></MudIconButton>
+
 @if (data != null)
 {
     <MudContainer>
@@ -52,24 +55,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        
         try
         {
-            /*var json = await File.ReadAllTextAsync("wwwroot/sample-data/ups.json");
-            data = Newtonsoft.Json.JsonConvert.DeserializeObject<UPS[]>(json);*/
-
-            string[] parameters = null;
-            /**** Send ups GET request to Zabbix API ****
-             * Send: --------
-             * Get: UPS list
-             ********************************************/
-            var apiResponse = await ApiService.GetApiResponse("ups", parameters).ConfigureAwait(false);     // Get all UPSs from Zabbix Server
-            JObject json = JObject.Parse(apiResponse);
-
-            // Deserialize 
-            data = json["result"].ToObject<UPS[]>();    // JSON to array of UPS objects
-
-            await InvokeAsync(StateHasChanged);     // Allow for components to re-render
+            await GetUPS();
         }
         catch (Exception ex)
         {
@@ -77,6 +65,23 @@
         }
     }
 
+    private async Task GetUPS()
+    {
+
+        string[] parameters = null;
+
+        /**** Send ups GET request to Zabbix API ****
+         * Send: --------
+         * Get: UPS list
+         ********************************************/
+        var apiResponse = await ApiService.GetApiResponse("ups", parameters).ConfigureAwait(false);     // Get all UPSs from Zabbix Server
+        JObject json = JObject.Parse(apiResponse);
+
+        // Deserialize 
+        data = json["result"].ToObject<UPS[]>();    // JSON to array of UPS objects
+
+        await InvokeAsync(StateHasChanged);     // Allow for components to re-render
+    }
 
     public class UPS
     {

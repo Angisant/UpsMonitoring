@@ -2,6 +2,7 @@
     outline: 1px solid #615f5f;
     margin-right: 20px;                 /* margin: space between cards */
     margin-bottom: 20px;
+    border-radius: 15px;
 }
 
 .display-grid {
