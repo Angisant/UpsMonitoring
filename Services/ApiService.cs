@@ -15,9 +15,6 @@ using Blazored.LocalStorage;
 
 public class ApiService
 {
-
-    //"2fa03210fdd7cf0c4ce5611641ad83d514a47c6b11eb6288d71d3beaa9c7351f"
-
     private readonly ILocalStorageService _localStorage;
 
     private readonly HttpClient _client;
