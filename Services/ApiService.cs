@@ -26,7 +26,7 @@ public class ApiService
 
     public ApiService(IHttpClientFactory httpClientFactory, ILocalStorageService localStorageService)
     {
-        _client = httpClientFactory.CreateClient("CustomClient");
+        _client = httpClientFactory.CreateClient("CustomClient");   // Defined in Program.cs
         _localStorage = localStorageService;
     }
 
@@ -45,7 +45,7 @@ public class ApiService
 
         var token = "";
         try {
-            token = await _localStorage.GetItemAsync<string>("authToken");
+            token = await _localStorage.GetItemAsync<string>("authToken");  // Get saved token if it exists
         }
         catch(Exception e) {
             Console.WriteLine("No token retrieved: " + e.Message);
@@ -53,16 +53,19 @@ public class ApiService
 
         if (requestType.Equals("authentication"))
         {
-            var json = JObject.Parse(request);
+            var json = JObject.Parse(request);  // String to JSON object
+
+            // Set credentials in request
             json["params"]["username"] = args[0];
             json["params"]["password"] = args[1];
-            request = json.ToString();
-            _client.DefaultRequestHeaders.Authorization = null;
+
+            request = json.ToString();  // JSON to string
+            _client.DefaultRequestHeaders.Authorization = null; // Clear authentication header
         }
-        else if(!string.IsNullOrEmpty(token))            
+        else if(!string.IsNullOrEmpty(token))   // Already logged in      
         {
             Console.WriteLine("Token exists");
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);   // Set autentication header with proper token
         }
         else
         {
@@ -71,16 +74,19 @@ public class ApiService
             throw new Exception("Not logged in");
         }
 
-        if(requestType.Equals("itemTrigger")){
+        if(requestType.Equals("itemTrigger"))
+        {
             var json = JObject.Parse(request);
-            json["params"]["hostids"] = new JArray(args);
+            json["params"]["hostids"] = new JArray(args);   // To request item triggers from specific batteries
             request = json.ToString();
         }
-        else if(requestType.Equals("hostItem")){
+        else if(requestType.Equals("hostItem"))
+        {
             var json = JObject.Parse(request);
-            json["params"]["groupids"] = args[0];
+            json["params"]["groupids"] = args[0];   // To request battery items from one specific ups
             request = json.ToString();
         }
+
         // Prepare the JSON-RPC request body
         var content = new StringContent(request, Encoding.UTF8, "application/json-rpc");
 
@@ -90,7 +96,7 @@ public class ApiService
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadAsStringAsync();
+            return await response.Content.ReadAsStringAsync();  // Return string response
         }
         else
         {

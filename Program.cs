@@ -35,6 +35,7 @@ builder.Services.AddHttpClient("CustomClient", client =>
     var httpClientHandler = new HttpClientHandler();
     httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
 
+    // Add certificates to allow API access through https 
     var certificate = new X509Certificate2("wwwroot/zabbix.crt");
     var caCertificate = new X509Certificate2("wwwroot/ca-certificate.pem");
     httpClientHandler.ClientCertificates.Add(certificate);

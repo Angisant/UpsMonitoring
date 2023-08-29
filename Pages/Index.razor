@@ -22,13 +22,13 @@
         <MudCardContent>
             <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Size="Size.Large" style="margin-bottom: 20px; font-size: 17rem;" />
             <MudTextField @bind-Value="Username" Label="Username" Variant="Variant.Outlined"></MudTextField>
-            <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
+            <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ChangePasswordVisibility" AdornmentAriaLabel="Show Password" />
             <MudButton  @onclick="Login" FullWidth="true" DisableElevation="true" Variant="Variant.Filled" style= "@($"margin-top: 10px; color: white; background: {Colors.Grey.Darken3};")">Login</MudButton>
             
             @if(AuthService.DidLoginFail())
             {
                 <div style="color: red;">
-                    @AuthService.GetErrorMessage()
+                    @AuthService.GetErrorMessage()      @* Display login error message *@
                 </div>
             }
         </MudCardContent>
@@ -44,14 +44,18 @@ else
 @code {
     private string Username { get; set; }
     private string Password { get; set; }
+
+    // For password input in login card
     private bool isPasswordShowing;
     private InputType PasswordInput = InputType.Password;
     private string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
-    private bool rendered = false;
+
+    private bool rendered = false;  // Used to make sure nothing is rendered until AuthService is initialized
+
 
     protected override void OnInitialized()
     {
-        AuthService.AuthenticationStateChanged += async () => await InvokeAsync(StateHasChanged);
+        AuthService.AuthenticationStateChanged += async () => await InvokeAsync(StateHasChanged);   // Allow for components to re-render with service alterations
 
         base.OnInitialized();
     }
@@ -60,13 +64,13 @@ else
     {
         if (firstRender)
         {
-            await AuthService.Init();
+            await AuthService.Init();   // Verifies login status
             rendered = true;
-            StateHasChanged();
+            StateHasChanged();   // Allow for components to re-render
         }
     }
 
-    private void ButtonTestclick()
+    private void ChangePasswordVisibility()
     {
         @if (isPasswordShowing)
         {
@@ -84,11 +88,11 @@ else
     private async Task Login()
     {   
         await AuthService.Login(Username, Password);
-        await InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);     // Allow for components to re-render
         
         if(!AuthService.DidLoginFail())
         {
-            Nav.NavigateTo("upsdisplay");
+            Nav.NavigateTo("upsdisplay");   // Go to UPS display after sucessful login
         }
     }
 

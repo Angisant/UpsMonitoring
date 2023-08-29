@@ -20,6 +20,7 @@ public class AuthService
         ApiService = apiService;
     }
 
+    // To be called in first render of a page, to establish if the token already exists or not
     public async Task Init(){
         Token = await _localStorage.GetItemAsync<string>("authToken").ConfigureAwait(false);
     }
@@ -36,26 +37,31 @@ public class AuthService
         {
             try 
             {   
+                /**** Send authentication request to Zabbix API ****
+                 * Send: Username and Password
+                 * Get: Authentication token
+                 ***************************************************/
                 var apiResponse = await ApiService.GetApiResponse("authentication", new string[] {username, password}).ConfigureAwait(false);
-                var json = JObject.Parse(apiResponse);
+                
+                var json = JObject.Parse(apiResponse); // String to JSON object
+
 
                 if(json.ContainsKey("error"))
                 {
                     Fail("Incorrect Username or Password");
-                    Console.WriteLine("Error auth: " + json);
                     ChangeAuthenticationState();
                     return;
                 }
                 
-                Token = json["result"].ToString();
-                await _localStorage.SetItemAsync("authToken", Token).ConfigureAwait(false);
+                Token = json["result"].ToString();  // extract token from json response
+                await _localStorage.SetItemAsync("authToken", Token).ConfigureAwait(false); // Save token
 
-                Username = username;
-                Password = password;
+                // Set new login credentials
+                SetCredentials(username, password);
             }
             catch(TaskCanceledException ex) when (ex.InnerException is TimeoutException)
             {   
-                Fail("Failed to connect with the server");
+                Fail("Failed to connect with the server");  // Timeout occured
             }
             catch (Exception ex)
             {
@@ -68,11 +74,13 @@ public class AuthService
     public async Task Logout()
     {
         ClearCredentials();
-        Token = "";
-        await _localStorage.RemoveItemAsync("authToken").ConfigureAwait(false);
-        ChangeAuthenticationState();
+
+        await _localStorage.RemoveItemAsync("authToken").ConfigureAwait(false); // Remove saved token 
+
+        ChangeAuthenticationState(); // Announce login status change
     }
 
+    // Checks for the existence of an authentication token
     public bool IsUserLoggedIn()
     {
         return !string.IsNullOrEmpty(Token);
@@ -88,19 +96,33 @@ public class AuthService
         return LoginErrorMessage;
     }
 
+    /****** Alerts that changes in this service have occured *******************
+     !  To be called everytime an attribute is altered, at the end the method
+     ***************************************************************************/
     private async Task ChangeAuthenticationState()
     {
         AuthenticationStateChanged?.Invoke();
     }
 
-    private void ClearCredentials(){
-        Username = "";
-        Password = "";
-        LoginFailed = false;
-        LoginErrorMessage = ""; 
+    // Sets login credentials
+    private void SetCredentials(string username, string password)
+    {
+        Username = username;
+        Password = password;
     }
 
-    private void Fail(string error) {
+    // Resets login status and credentials
+    private void ClearCredentials()
+    {
+        SetCredentials("", "");
+        LoginFailed = false;
+        LoginErrorMessage = ""; 
+        Token = "";
+    }
+
+    // Sets failed login status
+    private void Fail(string error) 
+    {
         LoginFailed = true;
         LoginErrorMessage = error; 
     }

@@ -1,5 +1,20 @@
-.custom-outline {
-    outline: 1px solid black;
+.display-card{
+    outline: 1px solid #615f5f;
+    margin-right: 20px;                 /* margin: space between cards */
+    margin-bottom: 20px;
+}
+
+.display-grid {
+    justify-content: flex-start;    /* justify: changes where grid element/item stay (center, start, end, ...)*/ 
+    gap: 1rem;                     /* gap: alters item distance between each other */
+    margin-top: 40px;
+}
+
+.display-avatar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-left: 3px;
 }
 
 .excellent-card {
@@ -9,9 +24,9 @@
 }
 
 .low-warning-card {
-    outline: 1px solid rgb(192, 174, 7);
-    background-color: rgb(234, 230, 10);
-    color: rgb(130, 108, 26);
+    outline: 1px solid rgb(180, 163, 12);
+    background-color: rgb(226, 194, 14);
+    color: rgb(130, 94, 26);
 }
 
 .warning-card {
@@ -44,6 +59,7 @@
     align-items: center;
     margin-bottom: 4px;
     margin-top: 4px;
+    border-radius: 20px;
 }
 
 .collapse-button {

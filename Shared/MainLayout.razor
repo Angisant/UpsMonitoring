@@ -5,7 +5,7 @@
 @inject ILocalStorageService LocalStorageService
 
 
-<MudThemeProvider />
+<MudThemeProvider Theme = "@_currentTheme"/>
 <MudDialogProvider />
 <MudSnackbarProvider />
 
@@ -35,16 +35,14 @@
     </MudMainContent>
 </MudLayout>
 
-<MudThemeProvider Theme = "@_currentTheme"/>
-
 
 @code {
     
-    private string _themeName = "light";
+    private string _themeName = "light";    // Default theme
 
-    bool _drawerOpen = true;
+    bool _drawerOpen = false;
 
-    private bool rendered = false;
+    private bool rendered = false;  // Used to make sure nothing is rendered until AuthService is initialized
 
     void DrawerToggle()
     {
@@ -53,7 +51,7 @@
 
     protected override void OnInitialized()
     {
-        AuthService.AuthenticationStateChanged += async () => await InvokeAsync(StateHasChanged);
+        AuthService.AuthenticationStateChanged += async () => await InvokeAsync(StateHasChanged);   // Allow for components to re-render with service alterations
 
         base.OnInitialized();
     }
@@ -62,65 +60,67 @@
     {
         if (firstRender)
         {
-            await AuthService.Init();
+            await AuthService.Init();   // Verifies login status
             rendered = true;
 
-            if (await LocalStorageService.ContainKeyAsync("theme"))
+            if (await LocalStorageService.ContainKeyAsync("theme"))     // Verifies if theme was already prevously saved
                 _themeName = await LocalStorageService.GetItemAsStringAsync("theme");
             else
-                _themeName = "light";
+                _themeName = "light";   
 
             _currentTheme = _themeName == "light" ? _lightTheme : _darkTheme;
 
-            StateHasChanged();
+            StateHasChanged();  // Allow for components to re-render
         }
     }
 
     private async Task Logout()
     {
         await AuthService.Logout();
-        await InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);     // Allow for components to re-render
         await Task.Delay(100);
-        Nav.NavigateTo("");
+        Nav.NavigateTo("");     // Go to Home page when logging out
     }
 
     MudTheme _currentTheme = null;
 
     MudTheme _darkTheme = new MudTheme
     {
-        Palette = new Palette
+        Palette = new Palette                   // Palette defines the colors the theme uses for all the components and main layout
         {
-            AppbarBackground = "#0097FF",
-            AppbarText = "#FFFFFF",
-            Primary = "#007CD1",
-            TextPrimary = "#FFFFFF",
-            Background = "#001524",
-            TextSecondary = "#E2EEF6",
-            DrawerBackground = "#093958",
-            DrawerText = "#FFFFFF",
-            Surface = "#093958",
-            ActionDefault = "#0C1217",
-            ActionDisabled = "#2F678C",
-            TextDisabled = "#B0B0B0",
+        AppbarBackground = "#2E2E2E",     // Dark Grey
+        AppbarText = "#FFFFFF",          // White
+        Primary = "#B22222",             // Red
+        TextPrimary = "#FFFFFF",         // White
+        Background = "#1E1E1E",          // Slightly Darker Grey
+        TextSecondary = "#B0B0B0",       // Light Grey
+        DrawerBackground = "#333333",    // Dark Grey
+        DrawerText = "#FFFFFF",          // White
+        Surface = "#2E2E2E",             // Dark Grey
+        ActionDefault = "#918F8F",       // Grey
+        ActionDisabled = "#5E5E5E",      // Light Grey
+        TextDisabled = "#8A8A8A"        // Light Grey
         }
     };
+
+
 
     MudTheme _lightTheme = new MudTheme
     {
         Palette = new Palette
         {
-            AppbarBackground = "#0097FF",
-            AppbarText = "#FFFFFF",
-            Primary = "#007CD1",
-            TextPrimary = "#0C1217",
-            Background = "#F4FDFF",
-            TextSecondary = "#0C1217",
-            DrawerBackground = "#C5E5FF",
-            DrawerText = "#0C1217",
-            Surface = "#E4FAFF",
-            ActionDefault = "#0C1217",
-            ActionDisabled = "#2F678C",
-            TextDisabled = "#676767",
+        AppbarBackground = "#FFFFFF",     // White
+        AppbarText = "#333333",           // Dark Grey
+        Primary = "#007CD1",              // Blue
+        TextPrimary = "#333333",          // Dark Grey
+        Background = "#F5F5F5",           // Light Grey
+        TextSecondary = "#777777",        // Medium Grey
+        DrawerBackground = "#F0F0F0",     // Light Grey
+        DrawerText = "#333333",           // Dark Grey
+        Surface = "#FFFFFF",              // White
+        ActionDefault = "#918F8F",        // Grey
+        ActionDisabled = "#B0B0B0",       // Light Grey
+        TextDisabled = "#B0B0B0"         // Light Grey
         }
     };
 
@@ -137,6 +137,6 @@
             _themeName = "light";
         }
         
-        await LocalStorageService.SetItemAsStringAsync("theme", _themeName).ConfigureAwait(false);
+        await LocalStorageService.SetItemAsStringAsync("theme", _themeName).ConfigureAwait(false);  // Save new theme
     }
 }

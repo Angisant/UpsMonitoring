@@ -19,11 +19,11 @@
 @if (data != null)
 {
     <MudContainer>
-        <MudGrid Justify="Justify.FlexStart" Spacing="1">      @* justify: changes where grid element/item stay (center, start, end,...) 
-                                                                  spacing: alters item size*@
+        <MudGrid class = "display-grid">      
             @foreach (var ups in data)
-            {
-                <MudItem Class="custom-outline" style="margin-right: 20px; margin-bottom: 20px;">    <!-- margin: space between cards -->
+            {   
+                // UPS card
+                <MudItem Class="display-card">
                     <MudCardContent>
                         <div>
                             <button @onclick="@(() => Nav.NavigateTo($"upsdisplay/{ups.Name}/{ups.GroupID}"))">
@@ -59,12 +59,17 @@
             data = Newtonsoft.Json.JsonConvert.DeserializeObject<UPS[]>(json);*/
 
             string[] parameters = null;
-            var apiResponse = await ApiService.GetApiResponse("ups", parameters).ConfigureAwait(false);
+            /**** Send ups GET request to Zabbix API ****
+             * Send: --------
+             * Get: UPS list
+             ********************************************/
+            var apiResponse = await ApiService.GetApiResponse("ups", parameters).ConfigureAwait(false);     // Get all UPSs from Zabbix Server
             JObject json = JObject.Parse(apiResponse);
 
             // Deserialize 
-            data = json["result"].ToObject<UPS[]>();
-            await InvokeAsync(StateHasChanged);
+            data = json["result"].ToObject<UPS[]>();    // JSON to array of UPS objects
+
+            await InvokeAsync(StateHasChanged);     // Allow for components to re-render
         }
         catch (Exception ex)
         {
